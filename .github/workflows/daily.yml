@@ -33,7 +33,7 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Run the script
         env:
-          DISCORDTOKEN: ${{ secrets.DISCORDTOKEN }}
+          DISCORDTOKEN: ${{ MTI3MzIzMDI4NDgwNzk5OTQ5OQ.GwxgQ0._yzOBgWh2zqG48psnUaMM5-bzwKS7ytgQ3lPJc }}
           TELETOKEN: ${{ secrets.TELETOKEN }}
         run: |
           python main.py --type auto
