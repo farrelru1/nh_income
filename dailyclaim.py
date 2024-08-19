@@ -203,24 +203,44 @@ class NhIncome:
                 today_claim = data
         return (claim_data, today_claim)
 
-    async def perform_claim(self):
-        print("Performing claim for", self.email)
-        self.claim_data, today = await self.check_unclaimed()
-        if today:
-            async with httpx.AsyncClient(cookies=self.cookies) as client:
-                if not self.cookies:
-                    await self.reserve_cookie(client)
-                result = await self.post_claim(client, today.item, today.period)
-                resdata = result.json()
-            print(resdata)
-            if resdata["message"] == "success":
-                today.status = ClaimStatus.SUCCESS
-                print("Successfully claimed income for: ", self.email)
-                return True
-            print("Failed to claim income for: ", self.email)
+async def perform_claim(self):
+    print("Performing claim for", self.email)
+    
+    # Contoh: Memuat data klaim dari file JSON
+    with open('claim_data.json', 'r') as f:
+        self.claim_data = json.load(f)
+    
+    today = self.claim_data.get('today')  # Mengambil data klaim hari ini dari JSON
+
+    if today:
+        if self.should_skip(today):
+            print(f"Skipping income claim for {self.email} due to skip condition.")
             return False
 
+        async with httpx.AsyncClient(cookies=self.cookies) as client:
+            if not self.cookies:
+                await self.reserve_cookie(client)
+            result = await self.post_claim(client, today['item'], today['period'])
+            resdata = result.json()
+
+        print(resdata)
+        if resdata["message"] == "success":
+            today['status'] = ClaimStatus.SUCCESS
+            print("Successfully claimed income for: ", self.email)
+            return True
+
+        print("Failed to claim income for: ", self.email)
         return False
+    
+    # Menyimpan perubahan ke file JSON jika ada klaim yang berhasil
+    with open('claim_data.json', 'w') as f:
+        json.dump(self.claim_data, f, indent=4)
+
+def should_skip(self, today):
+    # Contoh kondisi skip berdasarkan item atau period dari JSON
+    if today['item'] == "special_item" or today['period'] == "night":
+        return True
+    return False
 
     async def fast_claim(self):
         # rewrite of https://github.com/Insisted/NH_Income_Automation/blob/main/nh_claim-fast.py
